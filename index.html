@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="A private, real-time microphone gain meter with a ten-second level graph and clipping guidance.">
+  <title>Mic Gain Check</title>
+  <style>
+    :root{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#ebf2f2;background:#091313;--muted:#91a5a2;--line:#25403e;--mint:#63e0ba;--yellow:#ffcf75;--red:#ff7979}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 52% -15%,#16483e 0,#0b1c1a 44%,#091313 78%)}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:2px solid #a9ffdd;outline-offset:3px}
+    .wrap{max-width:1040px;margin:auto;padding:42px 24px 28px}.top{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:30px}.eyebrow{text-transform:uppercase;letter-spacing:.18em;color:var(--mint);font-size:12px;font-weight:750}.title{font-size:clamp(35px,6vw,60px);line-height:1.03;letter-spacing:-.055em;margin:10px 0}.subtitle{color:var(--muted);font-size:16px;line-height:1.5;margin:0;max-width:600px}.badge{display:flex;align-items:center;gap:9px;color:#bbd6cf;border:1px solid #31504a;background:#14302b;border-radius:99px;padding:10px 14px;white-space:nowrap;font-size:13px}.dot{width:8px;height:8px;background:#71847f;border-radius:50%}.badge.live .dot{background:var(--mint);box-shadow:0 0 13px var(--mint)}
+    .panel{background:linear-gradient(145deg,#112522,#0c1a19);border:1px solid #29423d;border-radius:24px;box-shadow:0 22px 60px #0004;padding:28px}.controls{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:30px}.control-left{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.select-group{display:flex;flex-direction:column;gap:7px}.select-group label{font-size:12px;color:var(--muted);font-weight:650}.select-group select{appearance:none;min-width:230px;max-width:330px;color:#e8f4ef;background:#19332e;border:1px solid #396157;border-radius:11px;padding:11px 34px 11px 13px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23bbd6cf' stroke-width='1.7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;text-overflow:ellipsis}.start{border:0;background:var(--mint);color:#0b201a;border-radius:11px;font-weight:800;padding:12px 19px;min-width:139px;box-shadow:0 5px 22px #46dd9d29}.start:hover{background:#86eccb}.start.stop{background:#32524a;color:#ecf7f1;box-shadow:none}.start.stop:hover{background:#42675b}.quiet{font-size:12px;color:var(--muted);margin-bottom:3px}
+    .notice{margin:-13px 0 20px;padding:11px 14px;border-radius:10px;background:#34402b;border:1px solid #687447;color:#e9e8c6;font-size:13px;line-height:1.4}.notice.error{background:#3c2325;border-color:#855054;color:#f2c9c9}.notice[hidden]{display:none}.metrics{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px;margin-bottom:20px}.metric{background:#0b1b19;border:1px solid #264039;border-radius:17px;padding:19px 20px;min-height:116px}.metric-label{color:var(--muted);font-size:12px;letter-spacing:.09em;text-transform:uppercase;font-weight:750}.metric-value{font-variant-numeric:tabular-nums;font-size:clamp(28px,4vw,43px);font-weight:760;letter-spacing:-.045em;margin-top:4px;line-height:1.15}.metric-value small{font-size:14px;letter-spacing:0;color:var(--muted);font-weight:550}.metric-sub{color:var(--muted);font-size:12px;margin-top:5px}.metric-value.ok{color:var(--mint)}.metric-value.warn{color:var(--yellow)}.metric-value.bad{color:var(--red)}
+    .graph-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:4px 0 11px}.graph-head h2{font-size:16px;letter-spacing:-.01em;margin:0}.legend{display:flex;gap:17px;color:var(--muted);font-size:12px}.key{display:inline-block;width:11px;height:3px;border-radius:5px;vertical-align:middle;margin-right:6px;background:var(--mint)}.key.rms{background:#78a9ac}.chart{position:relative;height:270px;border:1px solid #29433c;background:#0b1a18;border-radius:15px;overflow:hidden}canvas{display:block;width:100%;height:100%}.chart-empty{pointer-events:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8ca39d;font-size:14px;text-align:center;padding:20px}.chart-empty.hidden{display:none}
+    .result{display:flex;gap:15px;align-items:flex-start;background:#16372f;border:1px solid #2d6756;border-radius:15px;padding:18px 20px;margin-top:20px}.result.warn{background:#3b2d1b;border-color:#805b2e}.result.bad{background:#3c2325;border-color:#855054}.result-icon{flex:none;width:26px;height:26px;display:grid;place-items:center;color:#082118;background:var(--mint);border-radius:50%;font-weight:900}.result.warn .result-icon{background:var(--yellow)}.result.bad .result-icon{background:var(--red)}.result strong{display:block;font-size:17px;margin:0 0 3px}.result p{margin:0;color:#b9d0c8;font-size:14px;line-height:1.45}.result.warn p{color:#e5cfae}.result.bad p{color:#efc2c3}
+    .how{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:24px 0 0}.how div{padding:0 3px}.how b{color:#dcebe5;font-size:13px}.how p{margin:5px 0 0;font-size:13px;color:var(--muted);line-height:1.5}.source{border-top:1px solid #294039;margin-top:24px;padding-top:16px;color:#849b94;font-size:12px;line-height:1.5}.source a{color:#a5e7cc;text-underline-offset:3px}.hidden{display:none}@media(max-width:700px){.wrap{padding:27px 15px}.top{align-items:flex-start;flex-direction:column;gap:9px}.panel{padding:18px}.controls{margin-bottom:22px}.metrics{grid-template-columns:1fr 1fr}.metric:first-child{grid-column:1/-1}.metric{padding:15px;min-height:100px}.chart{height:240px}.how{grid-template-columns:1fr;gap:12px}.how div{padding:0}.select-group select{min-width:190px;max-width:calc(100vw - 68px)}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div><div class="eyebrow">Audio setup / live input</div><h1 class="title">Dial in your mic.</h1><p class="subtitle">Speak at your normal distance, then try your loudest expected voice. Adjust the gain on your microphone, audio interface, or system input.</p></div>
+    <div class="badge" id="badge"><span class="dot"></span><span id="badgeText">Mic off</span></div>
+  </header>
+  <section class="panel" aria-label="Microphone gain meter">
+    <div class="controls">
+      <div class="control-left"><div class="select-group"><label for="device">Input device</label><select id="device"><option value="">Default microphone</option></select></div><button class="start" id="toggle" type="button">Start listening</button></div>
+      <div class="quiet">Local only · no recording · no playback</div>
+    </div>
+    <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Current peak</div><div class="metric-value" id="current">— <small>dBFS</small></div><div class="metric-sub">Highest sample in latest 50 ms</div></div>
+      <div class="metric"><div class="metric-label">Loudest · last 10 s</div><div class="metric-value" id="loudest">— <small>dBFS</small></div><div class="metric-sub">Aim near −6 dBFS</div></div>
+      <div class="metric"><div class="metric-label">Ceiling hits</div><div class="metric-value" id="clipping">0</div><div class="metric-sub">50 ms intervals near 0 dBFS</div></div>
+    </div>
+    <div class="graph-head"><h2>Level history <span style="color:var(--muted);font-weight:500">· 10 seconds</span></h2><div class="legend"><span><i class="key"></i>Peak</span><span><i class="key rms"></i>Average</span></div></div>
+    <div class="chart"><canvas id="chart" aria-label="Ten second graph of microphone peak and average levels in dBFS"></canvas><div class="chart-empty" id="empty">Start listening to see live levels</div></div>
+    <div class="result" id="result" role="status" aria-live="polite"><span class="result-icon" id="resultIcon">✓</span><div><strong id="resultTitle">Ready when you are</strong><p id="resultText">Allow microphone access, then speak at your normal and loudest expected volume.</p></div></div>
+    <div class="how"><div><b>Target · −12 to −6 dBFS</b><p>Let your loudest expected words peak in the green band. Around −6 dBFS leaves useful headroom.</p></div><div><b>Too hot · above −6 dBFS</b><p>Lower your input gain if loud words repeatedly cross the target. Near 0 dBFS risks clipping.</p></div><div><b>Check the right control</b><p>Change the microphone or interface input gain. Speaker volume does not change this meter.</p></div></div>
+    <div class="source">Target based on the <a href="https://manual.audacityteam.org/man/faq_recording_how_to_s.html" target="_blank" rel="noopener noreferrer">Audacity recording guide</a>, which recommends a maximum peak around −6 dBFS. Browser processing can affect readings; this page requests automatic gain, noise suppression, and echo cancellation off where supported. A mic can distort before its digital level reaches 0 dBFS.</div>
+  </section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const els = {toggle:$('toggle'),device:$('device'),badge:$('badge'),badgeText:$('badgeText'),notice:$('notice'),current:$('current'),loudest:$('loudest'),clipping:$('clipping'),canvas:$('chart'),empty:$('empty'),result:$('result'),resultIcon:$('resultIcon'),resultTitle:$('resultTitle'),resultText:$('resultText')};
+  const WINDOW_MS = 10000, FLOOR = -60, CEILING = 0;
+  let stream, context, source, meter, sink, workletUrl, raf, points = [], hits = 0, running = false, starting = false, session = 0, lastAdvice = '';
+  const db = amplitude => amplitude > 0 ? Math.max(FLOOR, 20 * Math.log10(amplitude)) : FLOOR;
+  const fmt = value => value <= FLOOR ? '≤−60' : (value < 0 ? '−' + Math.abs(value).toFixed(1) : value.toFixed(1));
+  function result(kind, title, detail, icon) {
+    const key = kind + title + detail;
+    if (key === lastAdvice) return;
+    lastAdvice = key;
+    els.result.className = 'result' + (kind ? ' ' + kind : '');
+    els.resultTitle.textContent = title; els.resultText.textContent = detail; els.resultIcon.textContent = icon;
+  }
+  function setMetric(el, value, kind = '') { el.innerHTML = value + ' <small>dBFS</small>'; el.className = 'metric-value ' + kind; }
+  function notice(message, error = false) { els.notice.hidden = !message; els.notice.textContent = message; els.notice.classList.toggle('error', error); }
+  function setStatus(on) { els.badge.classList.toggle('live', on); els.badgeText.textContent = on ? 'Listening' : 'Mic off'; els.toggle.textContent = on ? 'Stop listening' : 'Start listening'; els.toggle.classList.toggle('stop', on); els.empty.classList.toggle('hidden', on); }
+  function updateAdvice(now) {
+    const recent = points.filter(p => now - p.t <= 5000);
+    const max = recent.length ? Math.max(...recent.map(p => p.peak)) : FLOOR;
+    if (recent.some(p => p.hit)) result('bad','Digital ceiling reached','Lower input gain, then repeat your loudest phrase. A ceiling hit may mean clipping.','!');
+    else if (max > -3) result('bad','Too hot — lower gain','Recent peaks are close to 0 dBFS. Turn the mic or interface gain down.','!');
+    else if (max > -6) result('warn','A little high','Your loudest words crossed −6 dBFS. Lower gain slightly and try again.','↓');
+    else if (max >= -12) result('','In the target range','Your recent peaks have healthy headroom. Try one loud phrase to confirm.','✓');
+    else if (max >= -35) result('warn','Peak is below target','If you were speaking, raise input gain a little and test a loud phrase.','↑');
+    else result('','Speak into your microphone','Try a normal sentence, then your loudest expected voice.','•');
+  }
+  function receive(data) {
+    if (!running) return;
+    const now = performance.now(), peak = db(data.peak), rms = db(data.rms), hit = data.peak >= 0.995;
+    points.push({t:now,peak,rms,hit});
+    points = points.filter(p => now - p.t <= WINDOW_MS);
+    if (hit) hits++;
+    const loud = Math.max(...points.map(p => p.peak));
+    setMetric(els.current,fmt(peak),peak > -3 ? 'bad' : peak > -6 ? 'warn' : peak >= -15 ? 'ok' : '');
+    setMetric(els.loudest,fmt(loud),loud > -3 ? 'bad' : loud > -6 ? 'warn' : loud >= -15 ? 'ok' : '');
+    els.clipping.textContent = String(hits); els.clipping.className = 'metric-value' + (hits ? ' bad' : '');
+    updateAdvice(now);
+    scheduleDraw();
+  }
+  const workletCode = `class PeakMeter extends AudioWorkletProcessor {
+    constructor(){ super(); this.peak=0; this.sum=0; this.count=0; this.frames=0; }
+    process(inputs,outputs){
+      const channels=inputs[0] || [];
+      const frameCount=channels[0]?.length || 128;
+      for(const channel of channels) for(let i=0;i<channel.length;i++){
+        const sample=channel[i]; this.peak=Math.max(this.peak,Math.abs(sample)); this.sum+=sample*sample; this.count++;
+      }
+      this.frames+=frameCount;
+      if(this.frames>=sampleRate*0.05){
+        this.port.postMessage({peak:this.peak,rms:this.count?Math.sqrt(this.sum/this.count):0});
+        this.peak=0; this.sum=0; this.count=0; this.frames=0;
+      }
+      return true;
+    }
+  } registerProcessor('peak-meter',PeakMeter);`;
+  async function refreshDevices(selected) {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+      els.device.replaceChildren(new Option('Default microphone',''));
+      for (const [index, device] of devices.entries()) els.device.add(new Option(device.label || `Microphone ${index+1}`,device.deviceId));
+      if (selected && [...els.device.options].some(o => o.value === selected)) els.device.value = selected;
+    } catch { /* Device names may remain hidden until permission is granted. */ }
+  }
+  async function start() {
+    if (starting || running) return;
+    if (!navigator.mediaDevices?.getUserMedia || !window.AudioWorkletNode) {
+      notice('Microphone access is unavailable here. Open this page on localhost in a current browser.', true);
+      result('bad','Microphone unavailable','Open this file in a current browser over HTTPS or localhost, then try again.','!'); return;
+    }
+    starting = true; els.toggle.disabled = true; els.toggle.textContent = 'Connecting…'; notice('Waiting for microphone permission…');
+    const id = ++session;
+    try {
+      const selected = els.device.value;
+      stream = await navigator.mediaDevices.getUserMedia({audio:{deviceId:selected?{exact:selected}:undefined,echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+      if (id !== session) { stream.getTracks().forEach(t => t.stop()); return; }
+      context = new AudioContext();
+      workletUrl = URL.createObjectURL(new Blob([workletCode],{type:'text/javascript'}));
+      await context.audioWorklet.addModule(workletUrl);
+      meter = new AudioWorkletNode(context,'peak-meter');
+      source = context.createMediaStreamSource(stream);
+      sink = context.createGain(); sink.gain.value = 0;
+      source.connect(meter).connect(sink).connect(context.destination);
+      meter.port.onmessage = event => receive(event.data);
+      await context.resume();
+      running = true; points = []; hits = 0; els.clipping.textContent = '0'; setStatus(true);
+      notice('');
+      setMetric(els.current,'—'); setMetric(els.loudest,'—');
+      result('','Speak into your microphone','Try a normal sentence, then your loudest expected voice.','•');
+      stream.getAudioTracks()[0]?.addEventListener('ended',() => { if(running) stop(); });
+      await refreshDevices(selected);
+      drawChart();
+    } catch (error) {
+      stop();
+      let message = error?.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow access in your browser and try again.' : error?.name === 'NotFoundError' ? 'No microphone was found. Connect one and try again.' : 'Could not start the microphone: ' + (error?.message || 'unknown error');
+      notice(message, true);
+      result('bad','Could not listen',message,'!');
+    } finally { starting = false; els.toggle.disabled = false; if (!running) els.toggle.textContent = 'Start listening'; }
+  }
+  function stop() {
+    session++; running = false; cancelAnimationFrame(raf); raf = 0;
+    if (meter) { meter.port.onmessage = null; meter.disconnect(); meter = null; }
+    source?.disconnect(); source = null; sink?.disconnect(); sink = null;
+    stream?.getTracks().forEach(t => t.stop()); stream = null;
+    if (context) { context.close().catch(()=>{}); context = null; }
+    if (workletUrl) { URL.revokeObjectURL(workletUrl); workletUrl = null; }
+    setStatus(false); points = []; drawChart();
+    notice('');
+    setMetric(els.current,'—'); setMetric(els.loudest,'—');
+    result('','Ready when you are','Allow microphone access, then speak at your normal and loudest expected volume.','✓');
+  }
+  function drawChart() {
+    const canvas=els.canvas, rect=canvas.getBoundingClientRect(), ratio=window.devicePixelRatio||1;
+    const width=Math.max(1,Math.round(rect.width*ratio)),height=Math.max(1,Math.round(rect.height*ratio));
+    if(canvas.width!==width || canvas.height!==height){canvas.width=width;canvas.height=height;}
+    const g=canvas.getContext('2d'); g.setTransform(ratio,0,0,ratio,0,0);
+    const w=rect.width,h=rect.height,left=43,right=w-11,top=12,bottom=h-24,ph=bottom-top,pw=right-left;
+    const y=v=>bottom-(Math.max(FLOOR,Math.min(CEILING,v))-FLOOR)/(CEILING-FLOOR)*ph;
+    g.clearRect(0,0,w,h);
+    g.fillStyle='#133a2d'; g.fillRect(left,y(-6),pw,y(-12)-y(-6));
+    g.fillStyle='#453426'; g.fillRect(left,y(-3),pw,y(-6)-y(-3));
+    g.fillStyle='#482827'; g.fillRect(left,y(0),pw,y(-3)-y(0));
+    g.font='11px ui-sans-serif,system-ui,sans-serif';g.textAlign='right';g.textBaseline='middle';
+    for(const v of [0,-6,-12,-24,-36,-48,-60]){
+      g.strokeStyle=v===-6?'#77b59a':'#294039';g.lineWidth=v===-6?1.5:1;
+      g.beginPath();g.moveTo(left,y(v));g.lineTo(right,y(v));g.stroke();
+      g.fillStyle=v===-6?'#a6e7c8':'#819b91';g.fillText(String(v),left-8,y(v));
+    }
+    g.textAlign='center';g.textBaseline='alphabetic';g.fillStyle='#819b91';
+    for(let i=0;i<=5;i++){let x=left+(pw*i/5);g.strokeStyle='#213a33';g.beginPath();g.moveTo(x,top);g.lineTo(x,bottom);g.stroke();g.fillText(i===5?'NOW':`${10-i*2}s`,x,h-7);}
+    const now=performance.now();
+    for(const [field,color,lineWidth] of [['rms','#78a9ac',1.6],['peak','#63e0ba',2.5]]){
+      g.beginPath();g.strokeStyle=color;g.lineWidth=lineWidth;g.lineJoin='round';
+      let first=true;
+      for(const p of points){const x=right-(now-p.t)/WINDOW_MS*pw;if(x<left)continue;const yy=y(p[field]);if(first){g.moveTo(x,yy);first=false;}else g.lineTo(x,yy);}
+      if(!first)g.stroke();
+    }
+    for(const p of points){if(!p.hit)continue;const x=right-(now-p.t)/WINDOW_MS*pw;if(x<left)continue;g.strokeStyle='#ff7979';g.lineWidth=2;g.beginPath();g.moveTo(x,top);g.lineTo(x,bottom);g.stroke();}
+  }
+  function scheduleDraw(){ if(raf)return; raf=requestAnimationFrame(()=>{raf=0;drawChart();}); }
+  els.toggle.addEventListener('click',()=>running?stop():start());
+  els.device.addEventListener('change',()=>{if(running){stop();start();}});
+  window.addEventListener('resize',scheduleDraw);
+  navigator.mediaDevices?.addEventListener?.('devicechange',()=>refreshDevices(els.device.value));
+  refreshDevices();drawChart();
+})();
+</script>
+</body>
+</html>
